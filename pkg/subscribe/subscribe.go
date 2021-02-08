@@ -35,14 +35,17 @@ func Update(url string) error {
 	if err != nil {
 		return err
 	}
+
 	rawData, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil
 	}
+
 	homedir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
+
 	if f, err := os.Stat(homedir + "/.v2sub"); err != nil || !f.IsDir() {
 		if err := os.Mkdir(homedir+"/.v2sub", os.ModePerm); err != nil {
 			return err
@@ -69,17 +72,24 @@ func Info() error {
 	defer rawFile.Close()
 
 	decodeReader := base64.NewDecoder(base64.StdEncoding, rawFile)
-	dest, err := bufio.NewReader(decodeReader).ReadBytes('\n')
+	row, err := bufio.NewReader(decodeReader).ReadBytes('\n')
 	if err != nil {
 		panic(err)
 	}
 
-	if len(dest) < 8 || string(dest[:5]) != "vmess" {
+	if len(row) < 8 || string(row[:5]) != "vmess" {
 		return errors.New("Invalid protocol")
 	}
 
 	var info userInfo
-	if err := json.Unmarshal(dest[8:], &info); err != nil {
+	dest := make([]byte, base64.StdEncoding.DecodedLen(len(row)-8))
+	n, err := base64.StdEncoding.Decode(dest, row[8:])
+	if err != nil {
+		return err
+	}
+
+	dest = dest[:n]
+	if err := json.Unmarshal(dest, &info); err != nil {
 		return err
 	}
 	printInfo(info)
