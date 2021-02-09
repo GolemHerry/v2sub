@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 const rawFilePath = "/.v2sub/raw.txt"
@@ -72,32 +73,67 @@ func Info() error {
 	defer rawFile.Close()
 
 	decodeReader := base64.NewDecoder(base64.StdEncoding, rawFile)
-	row, err := bufio.NewReader(decodeReader).ReadBytes('\n')
-	if err != nil {
-		panic(err)
-	}
+	bufReader := bufio.NewReader(decodeReader)
+	infos := make([]userInfo, 2)
 
-	if len(row) < 8 || string(row[:5]) != "vmess" {
-		return errors.New("Invalid protocol")
-	}
+	for i := 0; i < 2; i++ {
+		row, err := bufReader.ReadBytes('\n')
+		if err != nil {
+			panic(err)
+		}
 
-	var info userInfo
-	dest := make([]byte, base64.StdEncoding.DecodedLen(len(row)-8))
-	n, err := base64.StdEncoding.Decode(dest, row[8:])
-	if err != nil {
-		return err
-	}
+		if len(row) < 8 || string(row[:5]) != "vmess" {
+			return errors.New("Invalid protocol")
+		}
 
-	dest = dest[:n]
-	if err := json.Unmarshal(dest, &info); err != nil {
-		return err
+		dest := make([]byte, base64.StdEncoding.DecodedLen(len(row)-8))
+		n, err := base64.StdEncoding.Decode(dest, row[8:])
+		if err != nil {
+			return err
+		}
+
+		var info userInfo
+		if err := json.Unmarshal(dest[:n], &info); err != nil {
+			return err
+		}
+		infos[i] = info
 	}
-	printInfo(info)
+	printInfo(infos)
 
 	return nil
 }
 
-func printInfo(info userInfo) {
-	fmt.Printf("User info: \n%#v\n", info)
+func printInfo(infos []userInfo) {
+	data := make([][]string, 0)
+	for _, v := range infos {
+		data = append(data, []string{v.Remark, v.Addition, v.Id, v.Ps, v.Net, ""})
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Remark", "Addition", "ID", "Ps", "Net", "type"})
+	table.SetFooter([]string{"", "", "f3", "f4", "", ""})
+	table.SetBorder(false)
+
+	// table.SetHeaderColor(tablewriter.Colors{tablewriter.Bold, tablewriter.BgGreenColor},
+	// 	tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgBlackColor},
+	// 	tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiRedColor},
+	// 	tablewriter.Colors{tablewriter.BgRedColor, tablewriter.FgWhiteColor},
+	// 	tablewriter.Colors{tablewriter.BgCyanColor, tablewriter.FgWhiteColor},
+	// 	tablewriter.Colors{tablewriter.BgRedColor, tablewriter.FgWhiteColor},
+	// )
+
+	// table.SetColumnColor(tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiBlackColor},
+	// 	tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiRedColor},
+	// 	tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiRedColor},
+	// 	tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiBlackColor},
+	// 	tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiBlackColor},
+	// 	tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor})
+
+	// table.SetFooterColor(tablewriter.Colors{}, tablewriter.Colors{},
+	// 	tablewriter.Colors{tablewriter.Bold},
+	// 	tablewriter.Colors{tablewriter.FgHiRedColor})
+
+	table.AppendBulk(data)
+	table.Render()
 	//TODO beautify output
 }
