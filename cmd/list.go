@@ -29,7 +29,6 @@ var listCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list called")
 		sort_by, err := cmd.Flags().GetString("sort-by")
 		if err != nil {
 			log.Fatal(err)

@@ -29,7 +29,6 @@ var subscribeCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// fmt.Println("subscribe called")
 		url, err := cmd.Flags().GetString("url")
 		if err != nil {
 			log.Fatalln(err)
@@ -48,7 +47,6 @@ var infoCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// fmt.Println("info called")
 
 		if err := subscribe.Info(); err != nil {
 			log.Fatal(err)
