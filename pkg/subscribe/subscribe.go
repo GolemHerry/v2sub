@@ -12,7 +12,10 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-const rawFilePath = "/.v2sub/raw.txt"
+const (
+	rawFilePath = "/.v2sub/raw.txt"
+	infoLines   = 2
+)
 
 type userInfo struct {
 	Remark   string      `json:"remark"`
@@ -74,9 +77,9 @@ func Info() error {
 
 	decodeReader := base64.NewDecoder(base64.StdEncoding, rawFile)
 	bufReader := bufio.NewReader(decodeReader)
-	infos := make([]userInfo, 2)
+	infos := make([]userInfo, infoLines)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < infoLines; i++ {
 		row, err := bufReader.ReadBytes('\n')
 		if err != nil {
 			panic(err)
